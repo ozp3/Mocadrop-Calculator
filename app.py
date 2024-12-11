@@ -4,13 +4,16 @@ import requests
 app = Flask(__name__)
 
 def get_token_price(token_id, vs_currency="usd"):
-    url = f"https://api.coingecko.com/api/v3/simple/price?ids={token_id}&vs_currencies={vs_currency}"
-    response = requests.get(url)
-    if response.status_code == 200:
-        data = response.json()
-        return data[token_id][vs_currency]
-    else:
-        return None
+    try:
+        url = f"https://api.coingecko.com/api/v3/simple/price?ids={token_id}&vs_currencies={vs_currency}"
+        response = requests.get(url)
+        if response.status_code == 200:
+            data = response.json()
+            return data.get(token_id, {}).get(vs_currency, None)
+    except Exception as e:
+        print(f"API error: {e}")
+    return None
+
 
 @app.route("/", methods=["GET", "POST"])
 def index():
