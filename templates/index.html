@@ -8,62 +8,37 @@
   <body>
     <h1>Token Reward Calculator</h1>
     <form method="post">
-      <!-- Token Name -->
       <label for="token_name">Token Name:</label>
       <input
         type="text"
         id="token_name"
         name="token_name"
-        {%
-        if
-        custom_price_checked
-        %}
-        disabled
-        {%
-        endif
-        %}
+        {% if custom_price_checked %} disabled {% endif %}
         required
       /><br /><br />
 
-      <!-- Custom Price Checkbox -->
       <label>
         <input
           type="checkbox"
           id="custom_price_checkbox"
           name="custom_price_checkbox"
-          {%
-          if
-          custom_price_checked
-          %}
-          checked
-          {%
-          endif
-          %}
+          {% if custom_price_checked %} checked {% endif %}
           onchange="toggleCustomPrice(this)"
         />
-        Use custom token price </label
-      ><br /><br />
+        Use custom token price
+      </label><br /><br />
 
-      <!-- Custom Price Input -->
-      <div id="custom_price_div" style="display: none">
+      <div id="custom_price_div" style="display: none;">
         <label for="custom_price">Custom Token Price ($):</label>
         <input
           type="number"
           step="0.0001"
           id="custom_price"
           name="custom_price"
-          {%
-          if
-          custom_price_checked
-          %}
-          required
-          {%
-          endif
-          %}
+          {% if custom_price_checked %} required {% endif %}
         /><br /><br />
       </div>
 
-      <!-- Other Inputs -->
       <label for="tokens_offered">Tokens Offered:</label>
       <input
         type="number"
@@ -91,7 +66,6 @@
       <button type="submit">Calculate</button>
     </form>
 
-    <!-- JavaScript for Custom Price Logic -->
     <script>
       function toggleCustomPrice(checkbox) {
         const customPriceDiv = document.getElementById("custom_price_div");
@@ -106,35 +80,24 @@
         }
       }
 
-      // Checkbox durumuna göre custom price giriş alanını göster/gizle
       document.addEventListener("DOMContentLoaded", () => {
         const checkbox = document.getElementById("custom_price_checkbox");
         toggleCustomPrice(checkbox);
       });
     </script>
 
-    <!-- Hata ve Sonuç Mesajları -->
     {% if error %}
-    <p style="color: red">{{ error }}</p>
-    {% endif %} {% if token_name %}
+    <p style="color: red;">{{ error }}</p>
+    {% endif %}
+
+    {% if token_name %}
     <h2>Results</h2>
-    <p><strong>Token ID:</strong> {{ token_name }}</p>
+    <p><strong>Token ID (If any):</strong> {{ token_name }}</p>
     <p><strong>Token Price:</strong> {{ token_price }}</p>
     <p><strong>Tokens Offered:</strong> {{ tokens_offered }}</p>
     <p><strong>Your SP Burn:</strong> {{ your_sp_burn }}</p>
     <p><strong>Total SP Burnt:</strong> {{ total_sp_burnt }}</p>
     <p><strong>Expected Reward:</strong> {{ reward }}</p>
     {% endif %}
-    <footer
-      style="margin-top: 50px; text-align: left; font-size: 14px; color: gray"
-    >
-      Made by
-      <a
-        href="https://x.com/0xOzp"
-        target="_blank"
-        style="color: gray; text-decoration: none"
-        >@0xozp</a
-      >
-    </footer>
   </body>
 </html>
