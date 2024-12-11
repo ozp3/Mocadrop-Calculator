@@ -1,68 +1,51 @@
 from flask import Flask, render_template, request
 import requests
-import time
 
 app = Flask(__name__)
 
-CACHE = {}
-SUPPORTED_TOKENS = []
-
-# API'den desteklenen token listesini al
-def fetch_supported_tokens():
-    global SUPPORTED_TOKENS
+# Binance API üzerinden token fiyatını al
+def get_token_price_from_binance(symbol):
     try:
-        url = "https://api.coingecko.com/api/v3/coins/list"
-        response = requests.get(url, timeout=10)
+        # Binance API URL (örneğin, BTC -> BTCUSDT)
+        url = f"https://api.binance.com/api/v3/ticker/price?symbol={symbol.upper()}USDT"
+        response = requests.get(url)
         if response.status_code == 200:
-            SUPPORTED_TOKENS = response.json()
+            data = response.json()
+            return float(data["price"])  # Token fiyatını döndür
         else:
-            print(f"API Error: {response.status_code}")
-    except requests.exceptions.RequestException as e:
-        print(f"Request Exception: {e}")
-
-# Token doğrulama
-def is_token_supported(token_id):
-    return any(token["id"] == token_id for token in SUPPORTED_TOKENS)
-
-# Token fiyatını önbellek ile al
-def get_token_price_cached(token_id, vs_currency="usd"):
-    current_time = time.time()
-    if token_id in CACHE and current_time - CACHE[token_id]["timestamp"] < 60:
-        return CACHE[token_id]["price"]
-
-    # API çağrısı
-    try:
-        url = f"https://api.coingecko.com/api/v3/simple/price?ids={token_id}&vs_currencies={vs_currency}"
-        response = requests.get(url, timeout=5)
-        if response.status_code == 200:
-            price = response.json().get(token_id, {}).get(vs_currency, None)
-            if price is not None:
-                CACHE[token_id] = {"price": price, "timestamp": current_time}
-            return price
-        else:
-            print(f"API Error: {response.status_code}")
+            print(f"API Error: {response.status_code}, {response.text}")
             return None
-    except requests.exceptions.RequestException as e:
-        print(f"Request Exception: {e}")
+    except Exception as e:
+        print(f"Exception: {e}")
         return None
 
 @app.route("/", methods=["GET", "POST"])
 def index():
     if request.method == "POST":
-        token_name = request.form.get("token_name", "").lower()
-        if not token_name:
-            return render_template("index.html", error="Token name is required.")
+        token_name = request.form.get("token_name", "").upper()
+        tokens_offered = int(request.form.get("tokens_offered"))
+        your_sp_burn = int(request.form.get("your_sp_burn"))
+        total_sp_burnt = int(request.form.get("total_sp_burnt"))
 
-        # Token doğrulama
-        if not is_token_supported(token_name):
-            return render_template("index.html", error=f"Token '{token_name}' is not supported.")
-
-        token_price = get_token_price_cached(token_name)
+        # Binance üzerinden token fiyatını al
+        token_price = get_token_price_from_binance(token_name)
         if token_price is None:
-            return render_template("index.html", error="Failed to fetch token price. Please try again later.")
+            return render_template("index.html", error=f"Failed to fetch token price for {token_name}. Please check the token name or try again later.")
 
-        return render_template("index.html", token_price=f"{token_price:.4f}$")
+        # Ödülü hesapla
+        reward = your_sp_burn * (tokens_offered / total_sp_burnt) * token_price
+
+        return render_template(
+            "index.html",
+            token_name=token_name,
+            token_price=f"{token_price:.4f}$",
+            tokens_offered=f"{tokens_offered:,}",
+            your_sp_burn=f"{your_sp_burn:,}",
+            total_sp_burnt=f"{total_sp_burnt:,}",
+            reward=f"{reward:.2f}$"
+        )
+
     return render_template("index.html")
 
-# Uygulama başlatıldığında desteklenen token listesini al
-fetch_supported_tokens()
+if __name__ == "__main__":
+    app.run(debug=True)
