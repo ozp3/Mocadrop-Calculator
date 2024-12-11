@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Token Reward Calculator</title>
+  </head>
+  <body>
+    <h1>Token Reward Calculator</h1>
+    <form method="post">
+      <label for="token_name">Token Name:</label>
+      <input
+        type="text"
+        id="token_name"
+        name="token_name"
+        required
+      /><br /><br />
+
+      <label for="tokens_offered">Tokens Offered:</label>
+      <input
+        type="number"
+        id="tokens_offered"
+        name="tokens_offered"
+        required
+      /><br /><br />
+
+      <label for="your_sp_burn">Your SP Burn:</label>
+      <input
+        type="number"
+        id="your_sp_burn"
+        name="your_sp_burn"
+        required
+      /><br /><br />
+
+      <label for="total_sp_burnt">Total SP Burnt:</label>
+      <input
+        type="number"
+        id="total_sp_burnt"
+        name="total_sp_burnt"
+        required
+      /><br /><br />
+
+      <button type="submit">Calculate</button>
+    </form>
+
+    {% if token_name %}
+    <h2>Results</h2>
+    <p><strong>Token Name:</strong> {{ token_name }}</p>
+    <p><strong>Token Price:</strong> {{ token_price }}</p>
+    <p><strong>Tokens Offered:</strong> {{ tokens_offered }}</p>
+    <p><strong>Your SP Burn:</strong> {{ your_sp_burn }}</p>
+    <p><strong>Total SP Burnt:</strong> {{ total_sp_burnt }}</p>
+    <p><strong>Expected Reward:</strong> {{ reward }}</p>
+    {% elif error %}
+    <p style="color: red">{{ error }}</p>
+    {% endif %}
+  </body>
+</html>
