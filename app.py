@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request
 import requests
 import time
 
@@ -23,12 +23,12 @@ def get_token_price(token_id, vs_currency="usd"):
         return None
 
 # Kullanıcı isteklerini kontrol et
-def can_user_request(user_ip):
+def can_user_request(user_ip, interval):
     current_time = time.time()
     if user_ip in user_requests:
         last_request_time = user_requests[user_ip]
-        # Eğer kullanıcı bir dakikadan daha önce istek yaptıysa engelle
-        if current_time - last_request_time < 60:
+        # Eğer belirli bir süre geçmemişse engelle
+        if current_time - last_request_time < interval:
             return False
     # Zaman damgasını güncelle
     user_requests[user_ip] = current_time
@@ -40,21 +40,36 @@ def index():
         # Kullanıcı IP'sini al
         user_ip = request.remote_addr
 
-        # Kullanıcı istek sınırını kontrol et
-        if not can_user_request(user_ip):
-            return render_template("index.html", error="You can only make one request per minute.")
+        # Custom seçimi kontrol et
+        custom_price_checkbox = request.form.get("custom_price_checkbox")
+        if custom_price_checkbox:  # Kullanıcı custom seçmişse sınırlandırma yok
+            custom_price = request.form.get("custom_price")
+            if not custom_price:
+                return render_template("index.html", error="Custom price is required.")
+            try:
+                token_price = float(custom_price)
+                token_name = "Custom Price"
+            except ValueError:
+                return render_template("index.html", error="Invalid custom price. Please enter a valid number.")
+        else:  # Kullanıcı custom seçmemişse API isteği sınırlandırılır
+            token_name = request.form.get("token_name", "").lower()
+            if not token_name:
+                return render_template("index.html", error="Token name is required.")
 
-        token_name = request.form.get("token_name", "").lower()
+            # 10 saniye limiti
+            if not can_user_request(user_ip, interval=10):
+                return render_template("index.html", error="You can only make a request every 10 seconds.")
+
+            # CoinGecko API üzerinden token fiyatını al
+            token_price = get_token_price(token_name)
+            if token_price is None:
+                return render_template("index.html", error=f"Failed to fetch token price for {token_name}. Please check the token name or try again later.")
+
+        # Diğer hesaplamalar
         tokens_offered = int(request.form.get("tokens_offered"))
         your_sp_burn = int(request.form.get("your_sp_burn"))
         total_sp_burnt = int(request.form.get("total_sp_burnt"))
 
-        # CoinGecko API üzerinden token fiyatını al
-        token_price = get_token_price(token_name)
-        if token_price is None:
-            return render_template("index.html", error=f"Failed to fetch token price for {token_name}. Please check the token name or try again later.")
-
-        # Ödülü hesapla
         reward = your_sp_burn * (tokens_offered / total_sp_burnt) * token_price
 
         return render_template(
