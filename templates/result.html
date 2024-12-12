@@ -79,7 +79,10 @@
       <p><strong>Tokens Offered:</strong> {{ tokens_offered }}</p>
       <p><strong>Total SP Burnt:</strong> {{ total_sp_burnt }}</p>
       <p><strong>Your SP Burn:</strong> {{ your_sp_burn }}</p>
-      <p><strong>Token Price ($):</strong> {{ token_price }}</p>
+      <p>
+        <strong>Token Price ($):</strong>
+        <span id="token_price">{{ token_price }}</span>
+      </p>
       <p>
         <strong>Expected Reward:</strong>
         <span class="highlight">{{ reward }}</span>
@@ -95,5 +98,23 @@
     <footer>
       Made by <a href="https://x.com/0xOzp" target="_blank">@0xozp</a>
     </footer>
+    <script>
+      function updateTokenPrice() {
+        fetch("/get_price")
+          .then((response) => response.json())
+          .then((data) => {
+            const priceElement = document.getElementById("token_price");
+            if (priceElement) {
+              priceElement.textContent = `$${data.price}`;
+            }
+          })
+          .catch((error) =>
+            console.error("Error fetching token price:", error)
+          );
+      }
+
+      updateTokenPrice();
+      setInterval(updateTokenPrice, 30000);
+    </script>
   </body>
 </html>

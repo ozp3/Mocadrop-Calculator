@@ -1,34 +1,63 @@
-from flask import Flask, render_template, request, redirect, url_for
+from flask import Flask, render_template, request, redirect, url_for, jsonify
 import requests
+import threading
+import time
+from datetime import datetime
 
 app = Flask(__name__)
 
-# Mocaverse API URL
 MOCA_API_URL = "https://api.staking.mocaverse.xyz/api/mocadrop/projects/kip-protocol"
+COINGECKO_API_URL = "https://api.coingecko.com/api/v3/simple/price"
 
-# Function to fetch the pool data from Mocaverse API
-def get_pool_data():
-    try:
-        # Make a GET request to the Mocaverse API
-        response = requests.get(MOCA_API_URL)
-        response.raise_for_status()  # Raise error for HTTP issues
-        data = response.json()  # Parse JSON response
-        
-        # Extract the stakingPowerBurnt value
-        staking_power_burnt = float(data.get("stakingPowerBurnt", 0))
-        return staking_power_burnt
-    except Exception as e:
-        print(f"Error fetching Mocaverse data: {e}")
-        return None
-
-# Placeholder data for now
 MOCA_TOKEN_NAME = "KIP PROTOCOL"
 TOKENS_OFFERED = "50,000,000"
 
+current_token_price = None
+
+# Function to fetch data from Mocaverse API
+def get_pool_data():
+    try:
+        response = requests.get(MOCA_API_URL)
+        response.raise_for_status()
+        data = response.json()
+        staking_power_burnt = float(data.get("stakingPowerBurnt", 0))
+        registration_end_date = data.get("registrationEndDate", "N/A")
+        
+        # Format the registration end date
+        if registration_end_date != "N/A":
+            try:
+                dt = datetime.strptime(registration_end_date, "%Y-%m-%dT%H:%M:%S.%fZ")
+                registration_end_date = dt.strftime("%Y-%m-%d %H:%M:%S UTC")
+            except ValueError:
+                registration_end_date = "Invalid date format"
+        
+        return staking_power_burnt, registration_end_date
+    except Exception as e:
+        print(f"Error fetching Mocaverse data: {e}")
+        return None, "Error fetching date"
+
+
+# Function to fetch token price from Coingecko API
+def fetch_token_price():
+    global current_token_price
+    while True:
+        try:
+            response = requests.get(COINGECKO_API_URL, params={"ids": "kip", "vs_currencies": "usd"})
+            response.raise_for_status()
+            data = response.json()
+            current_token_price = data.get("kip", {}).get("usd", "N/A")
+        except Exception as e:
+            print(f"Error fetching token price: {e}")
+            current_token_price = "N/A"
+        time.sleep(30)
+
+# Start a background thread to update the token price
+thread = threading.Thread(target=fetch_token_price, daemon=True)
+thread.start()
+
 @app.route("/", methods=["GET", "POST"])
 def index():
-    # Fetch Total SP Burnt from API
-    total_sp_burnt = get_pool_data()
+    total_sp_burnt, registration_end_date = get_pool_data()
     if total_sp_burnt is None:
         return render_template(
             "index.html",
@@ -36,11 +65,11 @@ def index():
             token_name=MOCA_TOKEN_NAME,
             tokens_offered=TOKENS_OFFERED,
             total_sp_burnt="Error fetching data",
+            registration_end_date=registration_end_date,
         )
-    
+
     if request.method == "POST":
-        # User input fields
-        custom_price = request.form.get("custom_price")
+        custom_price = request.form.get("custom_price") or current_token_price
         your_sp_burn = request.form.get("your_sp_burn")
 
         if not custom_price or not your_sp_burn:
@@ -50,6 +79,7 @@ def index():
                 token_name=MOCA_TOKEN_NAME,
                 tokens_offered=TOKENS_OFFERED,
                 total_sp_burnt=f"{total_sp_burnt:,.0f}",
+                registration_end_date=registration_end_date,
             )
 
         try:
@@ -62,12 +92,11 @@ def index():
                 token_name=MOCA_TOKEN_NAME,
                 tokens_offered=TOKENS_OFFERED,
                 total_sp_burnt=f"{total_sp_burnt:,.0f}",
+                registration_end_date=registration_end_date,
             )
 
-        # Determine the number of decimals entered by the user
         custom_price_decimals = len(str(custom_price).split(".")[1]) if "." in str(custom_price) else 0
 
-        # Calculate reward and tokens received
         try:
             reward = your_sp_burn * (int(TOKENS_OFFERED.replace(",", "")) / total_sp_burnt) * custom_price
             tokens_received = your_sp_burn * (int(TOKENS_OFFERED.replace(",", "")) / total_sp_burnt)
@@ -78,6 +107,7 @@ def index():
                 token_name=MOCA_TOKEN_NAME,
                 tokens_offered=TOKENS_OFFERED,
                 total_sp_burnt=f"{total_sp_burnt:,.0f}",
+                registration_end_date=registration_end_date,
             )
 
         return redirect(
@@ -98,7 +128,12 @@ def index():
         token_name=MOCA_TOKEN_NAME,
         tokens_offered=TOKENS_OFFERED,
         total_sp_burnt=f"{total_sp_burnt:,.0f}",
+        registration_end_date=registration_end_date,
     )
+
+@app.route("/get_price")
+def get_price():
+    return jsonify({"price": current_token_price})
 
 @app.route("/result")
 def result():

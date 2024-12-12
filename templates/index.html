@@ -94,9 +94,38 @@
         text-decoration: underline;
       }
     </style>
+    <script>
+      async function updateTokenPrice() {
+        const priceElement = document.getElementById("live_price");
+        try {
+          const response = await fetch("/get_price");
+          if (!response.ok) {
+            throw new Error("Failed to fetch token price");
+          }
+          const data = await response.json();
+          if (data.price && data.price !== "N/A") {
+            priceElement.textContent = `$${data.price}`;
+          } else {
+            priceElement.textContent = "Price not available";
+          }
+        } catch (error) {
+          console.error("Error fetching token price:", error);
+          priceElement.textContent = "Error fetching price";
+        }
+      }
+
+      // İlk yüklemede fiyatı güncelle ve her 30 saniyede bir güncelle
+      document.addEventListener("DOMContentLoaded", () => {
+        updateTokenPrice();
+        setInterval(updateTokenPrice, 30000);
+      });
+    </script>
   </head>
   <body>
     <h1>Moca Drop Reward Calculator</h1>
+    <p style="text-align: center; color: #e994b8; font-weight: bold">
+      Registration Ends: {{ registration_end_date }}
+    </p>
     <form method="post">
       <label for="token_name">Moca Drop Token Name:</label>
       <input
@@ -133,14 +162,10 @@
         required
       /><br />
 
-      <label for="custom_price">Token Price ($):</label>
-      <input
-        type="number"
-        id="custom_price"
-        name="custom_price"
-        step="any"
-        required
-      /><br />
+      <p>
+        <strong>Live Token Price ($):</strong>
+        <span id="live_price">Loading...</span>
+      </p>
 
       <button type="submit">Calculate</button>
     </form>
@@ -160,10 +185,13 @@
       "
     >
       <p><strong>Token Name:</strong> {{ token_name }}</p>
-      <p><strong>Token Price:</strong> {{ token_price }}</p>
       <p><strong>Tokens Offered:</strong> {{ tokens_offered }}</p>
-      <p><strong>Your SP Burn:</strong> {{ your_sp_burn }}</p>
       <p><strong>Total SP Burnt:</strong> {{ total_sp_burnt }}</p>
+      <p><strong>Your SP Burn:</strong> {{ your_sp_burn }}</p>
+      <p>
+        <strong>Live Token Price:</strong>
+        <span id="live_price">Loading...</span>
+      </p>
       <p><strong>Expected Reward:</strong> {{ reward }}</p>
     </div>
     {% endif %}
