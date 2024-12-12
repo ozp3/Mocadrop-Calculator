@@ -3,8 +3,10 @@ import requests
 import threading
 import time
 from datetime import datetime
+from flask_cors import CORS
 
 app = Flask(__name__)
+CORS(app)  # Allow CORS for all domains
 
 MOCA_API_URL = "https://api.staking.mocaverse.xyz/api/mocadrop/projects/kip-protocol"
 COINGECKO_API_URL = "https://api.coingecko.com/api/v3/simple/price"
