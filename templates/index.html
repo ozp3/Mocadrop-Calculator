@@ -97,6 +97,7 @@
     <script>
       async function updateTokenPrice() {
         const priceElement = document.getElementById("live_price");
+        const timestampElement = document.getElementById("last_updated");
         try {
           const response = await fetch("/get_price");
           if (!response.ok) {
@@ -105,19 +106,21 @@
           const data = await response.json();
           if (data.price && data.price !== "N/A") {
             priceElement.textContent = `$${data.price}`;
+            timestampElement.textContent = `Last updated: ${data.last_updated}`;
           } else {
             priceElement.textContent = "Price not available";
+            timestampElement.textContent = "";
           }
         } catch (error) {
           console.error("Error fetching token price:", error);
           priceElement.textContent = "Error fetching price";
+          timestampElement.textContent = "";
         }
       }
 
-      // İlk yüklemede fiyatı güncelle ve her 30 saniyede bir güncelle
       document.addEventListener("DOMContentLoaded", () => {
         updateTokenPrice();
-        setInterval(updateTokenPrice, 100);
+        setInterval(updateTokenPrice, 30000);
       });
     </script>
   </head>
@@ -126,7 +129,7 @@
     <p style="text-align: center; color: #e994b8; font-weight: bold">
       Registration Ends: {{ registration_end_date }}
     </p>
-    <form method="post">
+    <form method="post" action="{{ url_for('index') }}">
       <label for="token_name">Moca Drop Token Name:</label>
       <input
         type="text"
@@ -166,34 +169,16 @@
         <strong>Live Token Price ($):</strong>
         <span id="live_price">Loading...</span>
       </p>
+      <p
+        id="last_updated"
+        style="font-size: 12px; color: gray; text-align: center"
+      ></p>
 
       <button type="submit">Calculate</button>
     </form>
 
     {% if error %}
     <p class="error">{{ error }}</p>
-    {% endif %} {% if token_price %}
-    <h2>Results</h2>
-    <div
-      style="
-        max-width: 500px;
-        margin: 20px auto;
-        padding: 20px;
-        background-color: #f9f9f9;
-        border: 1px solid #ddd;
-        border-radius: 5px;
-      "
-    >
-      <p><strong>Token Name:</strong> {{ token_name }}</p>
-      <p><strong>Tokens Offered:</strong> {{ tokens_offered }}</p>
-      <p><strong>Total SP Burnt:</strong> {{ total_sp_burnt }}</p>
-      <p><strong>Your SP Burn:</strong> {{ your_sp_burn }}</p>
-      <p>
-        <strong>Live Token Price:</strong>
-        <span id="live_price">Loading...</span>
-      </p>
-      <p><strong>Expected Reward:</strong> {{ reward }}</p>
-    </div>
     {% endif %}
 
     <footer>
