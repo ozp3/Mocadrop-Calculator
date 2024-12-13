@@ -1,12 +1,8 @@
 from flask import Flask, render_template, request, redirect, url_for, jsonify
 import requests
-import threading
-import time
 from datetime import datetime
-from flask_cors import CORS
 
 app = Flask(__name__)
-CORS(app)  # Allow CORS for all domains
 
 MOCA_API_URL = "https://api.staking.mocaverse.xyz/api/mocadrop/projects/kip-protocol"
 
@@ -21,7 +17,7 @@ def get_pool_data():
         data = response.json()
         staking_power_burnt = float(data.get("stakingPowerBurnt", 0))
         registration_end_date = data.get("registrationEndDate", "N/A")
-        
+
         # Format the registration end date
         if registration_end_date != "N/A":
             try:
@@ -29,7 +25,7 @@ def get_pool_data():
                 registration_end_date = dt.strftime("%Y-%m-%d %H:%M:%S UTC")
             except ValueError:
                 registration_end_date = "Invalid date format"
-        
+
         return staking_power_burnt, registration_end_date
     except Exception as e:
         print(f"Error fetching Mocaverse data: {e}")
@@ -96,9 +92,9 @@ def index():
                 token_name=MOCA_TOKEN_NAME,
                 tokens_offered=TOKENS_OFFERED,
                 total_sp_burnt=f"{total_sp_burnt:,.0f}",
-                token_price=f"{custom_price:.{custom_price_decimals}f}",
+                token_price=f"{custom_price:.{custom_price_decimals}f}$",
                 your_sp_burn=f"{your_sp_burn:,}",
-                reward=f"{reward:.2f}",
+                reward=f"{reward:.2f}$",
                 tokens_received=f"{tokens_received:,.2f}",
             )
         )
