@@ -94,35 +94,6 @@
         text-decoration: underline;
       }
     </style>
-    <script>
-      async function updateTokenPrice() {
-        const priceElement = document.getElementById("live_price");
-        const timestampElement = document.getElementById("last_updated");
-        try {
-          const response = await fetch("/get_price");
-          if (!response.ok) {
-            throw new Error("Failed to fetch token price");
-          }
-          const data = await response.json();
-          if (data.price && data.price !== "N/A") {
-            priceElement.textContent = `$${data.price}`;
-            timestampElement.textContent = `Last updated: ${data.last_updated}`;
-          } else {
-            priceElement.textContent = "Price not available";
-            timestampElement.textContent = "";
-          }
-        } catch (error) {
-          console.error("Error fetching token price:", error);
-          priceElement.textContent = "Error fetching price";
-          timestampElement.textContent = "";
-        }
-      }
-
-      document.addEventListener("DOMContentLoaded", () => {
-        updateTokenPrice();
-        setInterval(updateTokenPrice, 30000);
-      });
-    </script>
   </head>
   <body>
     <h1>Moca Drop Reward Calculator</h1>
@@ -165,14 +136,14 @@
         required
       /><br />
 
-      <p>
-        <strong>Live Token Price ($):</strong>
-        <span id="live_price">Loading...</span>
-      </p>
-      <p
-        id="last_updated"
-        style="font-size: 12px; color: gray; text-align: center"
-      ></p>
+      <label for="custom_price">Custom Token Price ($):</label>
+      <input
+        type="number"
+        id="custom_price"
+        name="custom_price"
+        step="any"
+        required
+      /><br />
 
       <button type="submit">Calculate</button>
     </form>
