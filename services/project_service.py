@@ -1,5 +1,8 @@
 import requests
-from datetime import datetime
+from datetime import datetime, timedelta
+
+# Global önbellek
+token_price_cache = {}
 
 def fetch_projects():
     try:
@@ -50,11 +53,16 @@ def check_deadline(registration_end_date):
 
 def fetch_token_price(token_ticker):
     """
-    Fetch the current price of a token from the CoinGecko API.
-
-    :param token_ticker: The ticker symbol of the token (e.g., "BTC").
-    :return: Current price as a float, or None if the token is not found.
+    Fetch the current price of a token from the CoinGecko API with 1-minute caching.
     """
+    global token_price_cache
+
+    # Eğer token zaten önbellekte varsa ve süre dolmamışsa direkt döndür
+    if token_ticker in token_price_cache:
+        cached_price, timestamp = token_price_cache[token_ticker]
+        if datetime.utcnow() - timestamp < timedelta(minutes=1):  # 1 dakikalık önbellek
+            return cached_price
+
     try:
         # CoinGecko API endpoint
         url = f"https://api.coingecko.com/api/v3/simple/price?ids={token_ticker.lower()}&vs_currencies=usd"
@@ -64,7 +72,10 @@ def fetch_token_price(token_ticker):
 
         # Check if the token exists in the response
         if token_ticker.lower() in data:
-            return data[token_ticker.lower()]["usd"]
+            current_price = data[token_ticker.lower()]["usd"]
+            # Fiyatı ve zaman damgasını önbelleğe kaydet
+            token_price_cache[token_ticker] = (current_price, datetime.utcnow())
+            return current_price
         else:
             print(f"Token {token_ticker} not found on CoinGecko.")
             return None
