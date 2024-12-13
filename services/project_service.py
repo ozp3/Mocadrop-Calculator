@@ -60,7 +60,7 @@ def fetch_token_price(token_ticker):
     # Eğer token zaten önbellekte varsa ve süre dolmamışsa direkt döndür
     if token_ticker in token_price_cache:
         cached_price, timestamp = token_price_cache[token_ticker]
-        if datetime.utcnow() - timestamp < timedelta(minutes=1):  # 1 dakikalık önbellek
+        if datetime.utcnow() - timestamp < timedelta(seconds=5):  # 1 dakikalık önbellek
             return cached_price
 
     try:
