@@ -35,7 +35,8 @@
         margin-bottom: 5px;
         color: #555;
       }
-      input, select {
+      input,
+      select {
         width: 100%;
         padding: 10px;
         margin-bottom: 15px;
@@ -104,9 +105,11 @@
   </head>
   <body>
     <h1>Moca Drop Reward Calculator</h1>
+    {% if not is_ended %}
     <p style="text-align: center; color: #e994b8; font-weight: bold">
       Registration Ends: {{ registration_end_date }}
     </p>
+    {% endif %}
     <form method="post" action="{{ url_for('index') }}">
       <label for="project">Select Project:</label>
       <select id="project" name="project" onchange="this.form.submit()">
@@ -144,6 +147,18 @@
         readonly
       /><br />
 
+      {% if token_price %}
+      <label for="current_price">Current Token Price (from CoinGecko):</label>
+      <input
+        type="text"
+        id="current_price"
+        name="current_price"
+        value="{{ token_price }}$"
+        readonly
+      /><br />
+      {% endif %}
+
+      {% if not is_ended %}
       <label for="your_sp_burn">Your SP Burn:</label>
       <input
         type="number"
@@ -158,10 +173,12 @@
         id="custom_price"
         name="custom_price"
         step="any"
-        required
       /><br />
+      {% endif %}
 
-      <button type="submit" name="calculate">Calculate</button>
+      <button type="submit" name="calculate" {% if is_ended %}disabled{% endif %}>
+        {% if is_ended %}Ended{% else %}Calculate{% endif %}
+      </button>
     </form>
 
     {% if error %}
