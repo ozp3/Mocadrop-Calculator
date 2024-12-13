@@ -35,7 +35,7 @@
         margin-bottom: 5px;
         color: #555;
       }
-      input {
+      input, select {
         width: 100%;
         padding: 10px;
         margin-bottom: 15px;
@@ -76,9 +76,16 @@
         font-weight: bold;
         text-align: center;
       }
-      h2 {
-        text-align: center;
-        color: #ffffff;
+      .project {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 15px;
+      }
+      .project img {
+        width: 32px;
+        height: 32px;
+        border-radius: 4px;
       }
       footer {
         margin-top: 50px;
@@ -101,14 +108,23 @@
       Registration Ends: {{ registration_end_date }}
     </p>
     <form method="post" action="{{ url_for('index') }}">
-      <label for="token_name">Moca Drop Token Name:</label>
-      <input
-        type="text"
-        id="token_name"
-        name="token_name"
-        value="{{ token_name }}"
-        readonly
-      /><br />
+      <label for="project">Select Project:</label>
+      <select id="project" name="project" onchange="this.form.submit()">
+        {% for project in projects %}
+        <option value="{{ project.name }}" {% if project.name == token_name %}selected{% endif %}>
+          {{ project.name }} ({{ project.tokenTicker }})
+        </option>
+        {% endfor %}
+      </select>
+
+      {% for project in projects %}
+      {% if project.name == token_name %}
+      <div class="project">
+        <img src="{{ project.icon }}" alt="{{ project.name }}" />
+        <span>{{ project.name }} ({{ project.tokenTicker }})</span>
+      </div>
+      {% endif %}
+      {% endfor %}
 
       <label for="tokens_offered">Tokens Offered:</label>
       <input
@@ -145,7 +161,7 @@
         required
       /><br />
 
-      <button type="submit">Calculate</button>
+      <button type="submit" name="calculate">Calculate</button>
     </form>
 
     {% if error %}

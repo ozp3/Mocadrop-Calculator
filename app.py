@@ -4,15 +4,30 @@ from datetime import datetime
 
 app = Flask(__name__)
 
-MOCA_API_URL = "https://api.staking.mocaverse.xyz/api/mocadrop/projects/kip-protocol"
-
-MOCA_TOKEN_NAME = "KIP PROTOCOL"
-TOKENS_OFFERED = "50,000,000"
-
-# Function to fetch data from Mocaverse API
-def get_pool_data():
+# Function to fetch available projects from Mocaverse API
+def fetch_projects():
     try:
-        response = requests.get(MOCA_API_URL)
+        response = requests.get("https://api.staking.mocaverse.xyz/api/mocadrop/projects/")
+        response.raise_for_status()
+        data = response.json().get("data", [])
+        return [
+            {
+                "name": project["name"],
+                "url": f"https://api.staking.mocaverse.xyz/api/mocadrop/projects/{project['urlSlug']}",
+                "icon": project.get("iconUrl", ""),
+                "tokenTicker": project.get("tokenTicker", ""),
+                "tokensOffered": project.get("tokensOffered", "0")
+            }
+            for project in data
+        ]
+    except Exception as e:
+        print(f"Error fetching project list: {e}")
+        return []
+
+# Function to fetch data from a specific project
+def get_pool_data(project_url):
+    try:
+        response = requests.get(project_url)
         response.raise_for_status()
         data = response.json()
         staking_power_burnt = float(data.get("stakingPowerBurnt", 0))
@@ -33,18 +48,46 @@ def get_pool_data():
 
 @app.route("/", methods=["GET", "POST"])
 def index():
-    total_sp_burnt, registration_end_date = get_pool_data()
+    projects = fetch_projects()
+
+    if not projects:
+        return render_template(
+            "index.html",
+            error="Could not fetch projects from Mocaverse API.",
+            projects=[],
+            token_name="",
+            tokens_offered="",
+            total_sp_burnt="",
+            registration_end_date="",
+        )
+
+    selected_project_name = request.form.get("project") or projects[0]["name"]
+    selected_project = next((p for p in projects if p["name"] == selected_project_name), None)
+
+    if not selected_project:
+        return render_template(
+            "index.html",
+            error="Invalid project selected.",
+            projects=projects,
+            token_name="",
+            tokens_offered="",
+            total_sp_burnt="",
+            registration_end_date="",
+        )
+
+    total_sp_burnt, registration_end_date = get_pool_data(selected_project["url"])
     if total_sp_burnt is None:
         return render_template(
             "index.html",
             error="Could not fetch Total SP Burnt from Mocaverse API.",
-            token_name=MOCA_TOKEN_NAME,
-            tokens_offered=TOKENS_OFFERED,
+            projects=projects,
+            token_name=selected_project["name"],
+            tokens_offered="Error fetching data",
             total_sp_burnt="Error fetching data",
             registration_end_date=registration_end_date,
         )
 
-    if request.method == "POST":
+    if request.method == "POST" and "calculate" in request.form:
         custom_price = request.form.get("custom_price")
         your_sp_burn = request.form.get("your_sp_burn")
 
@@ -52,8 +95,9 @@ def index():
             return render_template(
                 "index.html",
                 error="All fields are required.",
-                token_name=MOCA_TOKEN_NAME,
-                tokens_offered=TOKENS_OFFERED,
+                projects=projects,
+                token_name=selected_project["name"],
+                tokens_offered=f"{float(selected_project['tokensOffered']):,.0f}",
                 total_sp_burnt=f"{total_sp_burnt:,.0f}",
                 registration_end_date=registration_end_date,
             )
@@ -65,8 +109,9 @@ def index():
             return render_template(
                 "index.html",
                 error="Invalid input. Please enter numeric values.",
-                token_name=MOCA_TOKEN_NAME,
-                tokens_offered=TOKENS_OFFERED,
+                projects=projects,
+                token_name=selected_project["name"],
+                tokens_offered=f"{float(selected_project['tokensOffered']):,.0f}",
                 total_sp_burnt=f"{total_sp_burnt:,.0f}",
                 registration_end_date=registration_end_date,
             )
@@ -74,14 +119,15 @@ def index():
         custom_price_decimals = len(str(custom_price).split(".")[1]) if "." in str(custom_price) else 0
 
         try:
-            reward = your_sp_burn * (int(TOKENS_OFFERED.replace(",", "")) / total_sp_burnt) * custom_price
-            tokens_received = your_sp_burn * (int(TOKENS_OFFERED.replace(",", "")) / total_sp_burnt)
+            reward = your_sp_burn * (float(selected_project["tokensOffered"]) / total_sp_burnt) * custom_price
+            tokens_received = your_sp_burn * (float(selected_project["tokensOffered"]) / total_sp_burnt)
         except ZeroDivisionError:
             return render_template(
                 "index.html",
                 error="Total SP Burnt cannot be zero.",
-                token_name=MOCA_TOKEN_NAME,
-                tokens_offered=TOKENS_OFFERED,
+                projects=projects,
+                token_name=selected_project["name"],
+                tokens_offered=f"{float(selected_project['tokensOffered']):,.0f}",
                 total_sp_burnt=f"{total_sp_burnt:,.0f}",
                 registration_end_date=registration_end_date,
             )
@@ -89,8 +135,8 @@ def index():
         return redirect(
             url_for(
                 "result",
-                token_name=MOCA_TOKEN_NAME,
-                tokens_offered=TOKENS_OFFERED,
+                token_name=selected_project["name"],
+                tokens_offered=f"{float(selected_project['tokensOffered']):,.0f}",
                 total_sp_burnt=f"{total_sp_burnt:,.0f}",
                 token_price=f"{custom_price:.{custom_price_decimals}f}$",
                 your_sp_burn=f"{your_sp_burn:,}",
@@ -101,10 +147,12 @@ def index():
 
     return render_template(
         "index.html",
-        token_name=MOCA_TOKEN_NAME,
-        tokens_offered=TOKENS_OFFERED,
+        projects=projects,
+        token_name=selected_project["name"],
+        tokens_offered=f"{float(selected_project['tokensOffered']):,.0f}",
         total_sp_burnt=f"{total_sp_burnt:,.0f}",
         registration_end_date=registration_end_date,
+        selected_project=selected_project
     )
 
 @app.route("/result")
