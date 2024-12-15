@@ -1,5 +1,5 @@
 from flask import render_template, request, redirect, url_for
-from services.project_service import fetch_projects, get_pool_data, check_deadline, fetch_token_price
+from services.project_service import fetch_projects, get_pool_data, check_deadline
 from datetime import datetime
 
 def setup_routes(app):
@@ -17,7 +17,6 @@ def setup_routes(app):
                 total_sp_burnt="",
                 registration_end_date="",
                 is_ended=False,
-                token_price=None,
                 mode="flexible",
                 tiers=[],
                 custom_price=None,
@@ -36,7 +35,6 @@ def setup_routes(app):
                 total_sp_burnt="",
                 registration_end_date="",
                 is_ended=False,
-                token_price=None,
                 mode="flexible",
                 tiers=[],
                 custom_price=None,
@@ -50,11 +48,6 @@ def setup_routes(app):
         tier_config = pool_data["tier_config"]
 
         is_ended = check_deadline(selected_project["registrationEndDate"])
-
-        # Fetch CoinGecko price regardless of the status
-        token_price = None
-        if selected_project["tokenTicker"]:
-            token_price = fetch_token_price(selected_project["tokenTicker"])
 
         # Custom Token Price
         custom_price = None
@@ -86,7 +79,6 @@ def setup_routes(app):
             total_sp_burnt=total_sp_burnt_display,
             registration_end_date=registration_end_date,
             is_ended=is_ended,
-            token_price=token_price,
             mode=mode,
             tiers=tier_config,
             custom_price=custom_price,
@@ -99,7 +91,6 @@ def setup_routes(app):
             token_name=request.args.get("token_name"),
             tokens_offered=request.args.get("tokens_offered"),
             total_sp_burnt=request.args.get("total_sp_burnt"),
-            token_price=request.args.get("token_price"),
             your_sp_burn=request.args.get("your_sp_burn"),
             reward=request.args.get("reward"),
             tokens_received=request.args.get("tokens_received"),
