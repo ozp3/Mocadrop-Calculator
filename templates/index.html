@@ -48,14 +48,6 @@
         background-color: #f0f0f0;
         color: #666;
       }
-      input::-webkit-outer-spin-button,
-      input::-webkit-inner-spin-button {
-        -webkit-appearance: none;
-        margin: 0;
-      }
-      input[type="number"] {
-        -moz-appearance: textfield;
-      }
       button {
         width: 100%;
         padding: 10px;
@@ -69,24 +61,13 @@
       button:hover {
         background-color: #d683a5;
       }
-      p {
+      .tier-info {
         margin: 10px 0;
-      }
-      p.error {
-        color: red;
-        font-weight: bold;
-        text-align: center;
-      }
-      .project {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        margin-bottom: 15px;
-      }
-      .project img {
-        width: 32px;
-        height: 32px;
-        border-radius: 4px;
+        padding: 10px;
+        background-color: #f9f9f9;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        color: #333;
       }
       footer {
         margin-top: 50px;
@@ -94,23 +75,20 @@
         font-size: 14px;
         color: gray;
       }
-      footer a {
-        color: gray;
-        text-decoration: none;
-      }
-      footer a:hover {
-        text-decoration: underline;
-      }
     </style>
   </head>
   <body>
     <h1>Moca Drop Reward Calculator</h1>
+
+    <!-- Registration Deadline -->
     {% if not is_ended %}
     <p style="text-align: center; color: #e994b8; font-weight: bold">
       Registration Ends: {{ registration_end_date }}
     </p>
     {% endif %}
+
     <form method="post" action="{{ url_for('index') }}">
+      <!-- Proje Seçimi -->
       <label for="project">Select Project:</label>
       <select id="project" name="project" onchange="this.form.submit()">
         {% for project in projects %}
@@ -120,65 +98,91 @@
         {% endfor %}
       </select>
 
+      <!-- Proje İkonları -->
       {% for project in projects %}
       {% if project.name == token_name %}
-      <div class="project">
-        <img src="{{ project.icon }}" alt="{{ project.name }}" />
-        <span>{{ project.name }} ({{ project.tokenTicker }})</span>
+      <div class="tier-info">
+        <img src="{{ project.iconUrl }}" alt="Project Icon" style="width: 32px; height: 32px;" />
+        <strong>{{ project.name }}</strong>
+      </div>
+      <div class="tier-info">
+        <img src="{{ project.tokenIconUrl }}" alt="Token Icon" style="width: 32px; height: 32px;" />
+        <strong>Token: {{ project.tokenTicker }}</strong>
       </div>
       {% endif %}
       {% endfor %}
 
+      <!-- Flexible Mode -->
+      {% if mode == "flexible"%}
       <label for="tokens_offered">Tokens Offered:</label>
       <input
         type="text"
         id="tokens_offered"
-        name="tokens_offered"
-        value="{{ tokens_offered }}"
+        value="{{ '{:,.0f}'.format(tokens_offered | float) }}"
         readonly
-      /><br />
+      />
 
       <label for="total_sp_burnt">Total SP Burnt:</label>
-      <input
-        type="text"
-        id="total_sp_burnt"
-        name="total_sp_burnt"
-        value="{{ total_sp_burnt }}"
-        readonly
-      /><br />
-
-      {% if token_price %}
-      <label for="current_price">Current Token Price (from CoinGecko):</label>
-      <input
-        type="text"
-        id="current_price"
-        name="current_price"
-        value="{{ token_price }}$"
-        readonly
-      /><br />
+      <input type="text" id="total_sp_burnt" value="{{ total_sp_burnt }}" readonly />
       {% endif %}
 
-      {% if not is_ended %}
-      <label for="your_sp_burn">Your SP Burn:</label>
-      <input
-        type="number"
-        id="your_sp_burn"
-        name="your_sp_burn"
-        required
-      /><br />
-
+      <!-- Fixed Mode -->
+      {% if mode == "fixed" %}
+      <!-- Custom Token Price -->
       <label for="custom_price">Custom Token Price ($):</label>
       <input
         type="number"
         id="custom_price"
         name="custom_price"
         step="any"
-      /><br />
-      {% endif %}
+        min="0"
+        style="text-align: left;"
+      />
+      <style>
+        input[type="number"]::-webkit-inner-spin-button,
+        input[type="number"]::-webkit-outer-spin-button {
+          -webkit-appearance: none;
+          margin: 0;
+        }
+        input[type="number"] {
+          -moz-appearance: textfield; /* Firefox için */
+        }
+      </style>
+      
+      <!-- Common Information for Both Modes
+      <label for="tokens_offered">Tokens Offered:</label>
+      <input
+        type="text"
+        id="tokens_offered"
+       value="{{ '{:,.0f}'.format(tokens_offered | float) }}"
+       readonly
+      />
 
-      <button type="submit" name="calculate" {% if is_ended %}disabled{% endif %}>
-        {% if is_ended %}Ended{% else %}Calculate{% endif %}
-      </button>
+      <label for="total_sp_burnt">Total SP Burnt:</label>
+      <input
+       type="text"
+       id="total_sp_burnt"
+       value="{{ '{:,.0f}'.format(total_sp_burnt | float) if total_sp_burnt != 'N/A' else 'N/A' }}"
+        readonly
+      /> -->
+
+      <!-- Calculate Button -->
+      <button type="submit" name="calculate">Calculate</button>
+
+      <!-- Tüm Tier Bilgileri -->
+      <h3 style="color: #e994b8; text-align: center;">Tier Information</h3>
+      {% for tier in tiers %}
+      <div class="tier-info">
+        <p><strong>Tier {{ tier.tier }}</strong></p>
+        <p>Min SP Required: {{ tier.minPower }}</p>
+        <p>Available Slots: {{ tier.lots }}</p>
+        <p>Tokens per Slot: {{ tier.tokenAllocation }}</p>
+        {% if custom_price %}
+        <p><strong>Expected Reward ($): {{ "%.2f"|format(tier.tokenAllocation | float * custom_price | float) }}</strong> </p>
+        {% endif %}
+      </div>
+      {% endfor %}
+      {% endif %}
     </form>
 
     {% if error %}

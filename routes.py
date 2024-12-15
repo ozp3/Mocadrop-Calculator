@@ -18,6 +18,9 @@ def setup_routes(app):
                 registration_end_date="",
                 is_ended=False,
                 token_price=None,
+                mode="flexible",
+                tiers=[],
+                custom_price=None,
             )
 
         selected_project_name = request.form.get("project") or projects[0]["name"]
@@ -34,21 +37,17 @@ def setup_routes(app):
                 registration_end_date="",
                 is_ended=False,
                 token_price=None,
+                mode="flexible",
+                tiers=[],
+                custom_price=None,
             )
 
-        total_sp_burnt, registration_end_date = get_pool_data(selected_project["url"])
-        if total_sp_burnt is None:
-            return render_template(
-                "index.html",
-                error="Could not fetch Total SP Burnt from Mocaverse API.",
-                projects=projects,
-                token_name=selected_project["name"],
-                tokens_offered="Error fetching data",
-                total_sp_burnt="Error fetching data",
-                registration_end_date=registration_end_date,
-                is_ended=False,
-                token_price=None,
-            )
+        # Fetch project data
+        pool_data = get_pool_data(selected_project["url"])
+        total_sp_burnt = pool_data["staking_power_burnt"]
+        registration_end_date = pool_data["registration_end_date"]
+        mode = pool_data["mode"]
+        tier_config = pool_data["tier_config"]
 
         is_ended = check_deadline(selected_project["registrationEndDate"])
 
@@ -57,79 +56,40 @@ def setup_routes(app):
         if selected_project["tokenTicker"]:
             token_price = fetch_token_price(selected_project["tokenTicker"])
 
-        if request.method == "POST" and "calculate" in request.form:
-            custom_price = request.form.get("custom_price")
-            your_sp_burn = request.form.get("your_sp_burn")
-
-            if not custom_price or not your_sp_burn:
-                return render_template(
-                    "index.html",
-                    error="All fields are required.",
-                    projects=projects,
-                    token_name=selected_project["name"],
-                    tokens_offered=f"{float(selected_project['tokensOffered']):,.0f}",
-                    total_sp_burnt=f"{total_sp_burnt:,.0f}",
-                    registration_end_date=registration_end_date,
-                    is_ended=is_ended,
-                    token_price=token_price,
-                )
-
+        # Custom Token Price
+        custom_price = None
+        if request.method == "POST" and "custom_price" in request.form:
             try:
-                custom_price = float(custom_price)
-                your_sp_burn = int(your_sp_burn)
+                custom_price = float(request.form.get("custom_price"))
             except ValueError:
-                return render_template(
-                    "index.html",
-                    error="Invalid input. Please enter numeric values.",
-                    projects=projects,
-                    token_name=selected_project["name"],
-                    tokens_offered=f"{float(selected_project['tokensOffered']):,.0f}",
-                    total_sp_burnt=f"{total_sp_burnt:,.0f}",
-                    registration_end_date=registration_end_date,
-                    is_ended=is_ended,
-                    token_price=token_price,
-                )
+                custom_price = None
 
-            custom_price_decimals = len(str(custom_price).split(".")[1]) if "." in str(custom_price) else 0
+        # Fixed Mode: Calculate Expected Rewards if Custom Price is provided
+        if mode == "fixed" and custom_price:
+            for tier in tier_config:
+                tokens_per_slot = float(tier.get("tokenAllocation", 0))
+                tier["expected_reward"] = round(tokens_per_slot * custom_price, 2)
 
-            try:
-                reward = your_sp_burn * (float(selected_project["tokensOffered"]) / total_sp_burnt) * custom_price
-                tokens_received = your_sp_burn * (float(selected_project["tokensOffered"]) / total_sp_burnt)
-            except ZeroDivisionError:
-                return render_template(
-                    "index.html",
-                    error="Total SP Burnt cannot be zero.",
-                    projects=projects,
-                    token_name=selected_project["name"],
-                    tokens_offered=f"{float(selected_project['tokensOffered']):,.0f}",
-                    total_sp_burnt=f"{total_sp_burnt:,.0f}",
-                    registration_end_date=registration_end_date,
-                    is_ended=is_ended,
-                    token_price=token_price,
-                )
-
-            return redirect(
-                url_for(
-                    "result",
-                    token_name=selected_project["name"],
-                    tokens_offered=f"{float(selected_project['tokensOffered']):,.0f}",
-                    total_sp_burnt=f"{total_sp_burnt:,.0f}",
-                    token_price=f"{custom_price:.{custom_price_decimals}f}$",
-                    your_sp_burn=f"{your_sp_burn:,}",
-                    reward=f"{reward:.2f}$",
-                    tokens_received=f"{tokens_received:,.2f}",
-                )
-            )
+        # Flexible Mode: Tokens Offered and Total SP Burnt
+        if mode == "flexible":
+            tokens_offered = selected_project.get("tokensOffered", "0")
+            total_sp_burnt_display = f"{total_sp_burnt:,.0f}" if total_sp_burnt else "N/A"
+        else:
+            tokens_offered = None
+            total_sp_burnt_display = None
 
         return render_template(
             "index.html",
             projects=projects,
             token_name=selected_project["name"],
-            tokens_offered=f"{float(selected_project['tokensOffered']):,.0f}",
-            total_sp_burnt=f"{total_sp_burnt:,.0f}",
+            tokens_offered=tokens_offered,
+            total_sp_burnt=total_sp_burnt_display,
             registration_end_date=registration_end_date,
             is_ended=is_ended,
             token_price=token_price,
+            mode=mode,
+            tiers=tier_config,
+            custom_price=custom_price,
         )
 
     @app.route("/result")

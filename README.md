@@ -1,5 +1,9 @@
 ﻿# Mocadrop-Calculator
 
+v2.1.0 IS HERE
+
+-Fixed and Flexable projects added
+
 v2.0.2 IS HERE
 
 - Realtime Token Price (Activated)
