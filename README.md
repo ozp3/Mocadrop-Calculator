@@ -1,8 +1,13 @@
 ﻿# Mocadrop-Calculator
 
+v2.1.1 IS HERE
+
+- Bug fixes and improvements
+- Can calculate registration ended projects
+
 v2.1.0 IS HERE
 
--Fixed and Flexable projects added
+- Fixed and Flexable projects added
 
 v2.0.2 IS HERE
 

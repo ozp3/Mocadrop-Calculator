@@ -1,114 +1,30 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
-    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1780098476106670"
-     crossorigin="anonymous"></script>
+    <script
+      async
+      src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1780098476106670"
+      crossorigin="anonymous"
+    ></script>
 
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Moca Drop Reward Calculator</title>
-    <style>
-      body {
-        font-family: 'Arial', sans-serif;
-        background-color: #1e1e1e;
-        margin: 0;
-        padding: 0;
-        color: #f0f0f0;
-      }
-      h1 {
-        text-align: center;
-        color: #ff79c6;
-        margin: 20px;
-        font-weight: bold;
-        text-transform: uppercase;
-      }
-      form {
-        max-width: 600px;
-        margin: 20px auto;
-        padding: 20px;
-        background-color: #2e2e2e;
-        border-radius: 10px;
-        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
-        color: #333;
-      }
-      label {
-        display: block;
-        font-weight: bold;
-        margin-bottom: 10px;
-        color: #ff79c6;
-      }
-      input,
-      select {
-        width: 100%;
-        padding: 10px;
-        margin-bottom: 20px;
-        border: 1px solid #ddd;
-        border-radius: 4px;
-        background-color: #3a3a3a;
-        box-sizing: border-box;
-        font-size: 16px;
-        color: #fff;
-      }
-      input[readonly] {
-        background-color: #444;
-      }
-      button {
-        width: 100%;
-        padding: 12px;
-        background-color: #ff79c6;
-        color: #fff;
-        border: none;
-        border-radius: 4px;
-        font-size: 18px;
-        font-weight: bold;
-        cursor: pointer;
-        transition: background-color 0.3s ease;
-      }
-      button:hover {
-        background-color: #e66bb6;
-      }
-      .tier-info {
-        margin: 15px 0;
-        padding: 15px;
-        background-color: #3a3a3a;
-        border-radius: 8px;
-        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
-      }
-      .tier-info p {
-        margin: 10px 0;
-        font-size: 14px;
-        color: #ccc;
-      }
-      .tier-info strong {
-        color: #fff;
-      }
-      footer {
-        text-align: center;
-        margin-top: 50px;
-        font-size: 14px;
-        color: #888;
-      }
-      footer a {
-        color: #ff79c6;
-        text-decoration: none;
-      }
-      footer a:hover {
-        text-decoration: underline;
-      }
-    </style>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles/style.css') }}">
   </head>
   <body>
     <h1>Moca Drop Reward Calculator</h1>
 
-    <!-- Registration Deadline -->
-    {% if not is_ended %}
     <p style="text-align: center; color: #e994b8; font-weight: bold">
       Registration Ends: {{ registration_end_date }}
+    </p>
+    {% if is_ended %}
+    <p style="text-align: center; color: red; font-weight: bold">
+      REGISTRATION ENDED
     </p>
     {% endif %}
 
     <form method="post" action="{{ url_for('index') }}">
-      <!-- Proje Seçimi -->
       <label for="project">Select Project:</label>
       <select id="project" name="project" onchange="this.form.submit()">
         {% for project in projects %}
@@ -118,7 +34,6 @@
         {% endfor %}
       </select>
 
-      <!-- Proje İkonları -->
       {% for project in projects %}
       {% if project.name == token_name %}
       <div class="tier-info">
@@ -132,44 +47,36 @@
       {% endif %}
       {% endfor %}
 
-      <!-- Flexible Mode -->
-      {% if mode == "flexible" %}
       <div class="tier-info">
         <p><strong>Tokens Offered:</strong> {{ '{:,.0f}'.format(tokens_offered | float) }}</p>
         <p><strong>Total SP Burnt:</strong> {{ total_sp_burnt }}</p>
       </div>
+
+      {% if mode == "flexible" %}
+      <div>
+        <label for="sp_burned">Your SP Burned:</label>
+        <input type="number" id="sp_burned" name="sp_burned" step="any" min="0" placeholder="Enter your SP Burned" />
+        <label for="custom_price">Custom Token Price ($):</label>
+        <input type="number" id="custom_price" name="custom_price" step="any" min="0" placeholder="Enter custom token price" />
+      </div>
+
+      {% if expected_reward is not none %}
+      <div class="tier-info">
+        <p><strong><span style="color: #ff79c6;">Expected Reward ($): {{ "%.2f"|format(expected_reward) }}</span></strong></p>
+      </div>
       {% endif %}
 
-      <!-- Fixed Mode -->
+      <button type="submit" name="calculate_flexible">Calculate</button>
+      {% endif %}
+
       {% if mode == "fixed" %}
-      <!-- Custom Token Price -->
-      <div style="display: flex; flex-direction: column; align-items: center;">
+      <div>
         <label for="custom_price">Custom Token Price ($):</label>
-        <input
-          type="number"
-          id="custom_price"
-          name="custom_price"
-          step="any"
-          min="0"
-          style="border: 2px solid #ff79c6;"/>
+        <input type="number" id="custom_price" name="custom_price" step="any" min="0" />
       </div>
-      
-      <style>
-        input[type="number"]::-webkit-inner-spin-button,
-        input[type="number"]::-webkit-outer-spin-button {
-          -webkit-appearance: none;
-          margin: 0;
-        }
-        input[type="number"] {
-          -moz-appearance: textfield; /* Firefox için */
-        }
-      </style>
-      
 
-      <!-- Calculate Button -->
-      <button type="submit" name="calculate">Calculate</button>
+      <button type="submit" name="calculate_fixed">Calculate</button>
 
-      <!-- Tüm Tier Bilgileri -->
       <h3 style="color: #e994b8; text-align: center;">Tier Information</h3>
       {% for tier in tiers %}
       <div class="tier-info">
@@ -178,7 +85,7 @@
         <p>Available Slots: {{ tier.lots }}</p>
         <p>Tokens per Slot: {{ tier.tokenAllocation }}</p>
         {% if custom_price %}
-        <p><strong><span style="color: #ff79c6;">Expected Reward ($): {{ "%.2f"|format(tier.tokenAllocation | float * custom_price | float) }}</span></strong> </p>
+        <p><strong><span style="color: #ff79c6;">Expected Reward ($): {{ "%.2f"|format(tier.tokenAllocation | float * custom_price | float) }}</span></strong></p>
         {% endif %}
       </div>
       {% endfor %}

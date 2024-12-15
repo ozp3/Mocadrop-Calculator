@@ -98,23 +98,5 @@
     <footer>
       Made by <a href="https://x.com/0xOzp" target="_blank">@0xozp</a>
     </footer>
-    <script>
-      function updateTokenPrice() {
-        fetch("/get_price")
-          .then((response) => response.json())
-          .then((data) => {
-            const priceElement = document.getElementById("token_price");
-            if (priceElement) {
-              priceElement.textContent = `$${data.price}`;
-            }
-          })
-          .catch((error) =>
-            console.error("Error fetching token price:", error)
-          );
-      }
-
-      updateTokenPrice();
-      setInterval(updateTokenPrice, 30000);
-    </script>
   </body>
 </html>
