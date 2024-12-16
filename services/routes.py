@@ -1,5 +1,6 @@
 from flask import render_template, request, redirect, url_for
-from services.project_service import fetch_projects, get_pool_data, check_deadline
+from services.project_service import fetch_projects, get_pool_data, check_deadline, fetch_wallet_data
+from services.ens_utils import resolve_ens_or_evm_address
 from datetime import datetime
 
 def setup_routes(app):
@@ -21,6 +22,8 @@ def setup_routes(app):
                 tiers=[],
                 custom_price=None,
                 expected_reward=None,
+                wallet_data=None,
+                evm_address=None,
             )
 
         selected_project_name = request.form.get("project") or projects[0]["name"]
@@ -40,6 +43,8 @@ def setup_routes(app):
                 tiers=[],
                 custom_price=None,
                 expected_reward=None,
+                wallet_data=None,
+                evm_address=None,
             )
 
         # Fetch project data
@@ -55,6 +60,23 @@ def setup_routes(app):
         custom_price = None
         your_sp_burned = None
         expected_reward = None
+        wallet_data = None
+        evm_address = None
+
+        # Fetch Wallet Data
+        if request.method == "POST" and "fetch_wallet_data" in request.form:
+            input_address = request.form.get("evm_address", "").strip()
+            if input_address:
+                # Resolve ENS or validate EVM address
+                result = resolve_ens_or_evm_address(input_address)
+                if result["success"]:
+                    evm_address = result["address"]
+                    wallet_data = fetch_wallet_data(evm_address)
+                    if wallet_data and "error" not in wallet_data:
+                        wallet_data = {k: f"{float(v):.2f}" if isinstance(v, str) and v.replace('.', '', 1).isdigit() else v 
+                                       for k, v in wallet_data.items()}
+                else:
+                    wallet_data = {"error": result["error"]}
 
         # Flexible Mode: Calculate Expected Reward
         if mode == "flexible" and request.method == "POST" and "calculate_flexible" in request.form:
@@ -99,4 +121,6 @@ def setup_routes(app):
             tiers=tier_config,
             custom_price=custom_price,
             expected_reward=expected_reward,
+            wallet_data=wallet_data,
+            evm_address=evm_address,
         )

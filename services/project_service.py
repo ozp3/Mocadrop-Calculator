@@ -75,3 +75,34 @@ def check_deadline(registration_end_date):
         return datetime.utcnow() > deadline
     except ValueError:
         return False
+
+def fetch_wallet_data(evm_address):
+    """
+    Fetch wallet data for the given EVM address from the Mocaverse API.
+    """
+    api_url = f"https://api.staking.mocaverse.xyz/api/power?walletAddress={evm_address}"
+    try:
+        response = requests.get(api_url)
+        response.raise_for_status()
+        wallet_data = response.json()
+
+        # Format numbers with commas
+        def format_number(value):
+            try:
+                return f"{float(value):,.2f}" if value not in [None, "N/A"] else "N/A"
+            except ValueError:
+                return "N/A"
+
+        # Parse and format data
+        return {
+            "totalGenerated": format_number(wallet_data.get("totalGenerated", "N/A")),
+            "baseRatePerDay": format_number(wallet_data.get("baseRatePerDay", "N/A")),
+            "boostRatePerDay": format_number(wallet_data.get("boostRatePerDay", "N/A")),
+            "totalBoostPercent": wallet_data.get("totalBoostPercent", "N/A"),  # Percent remains unchanged
+            "earlyBonus": format_number(wallet_data.get("earlyBonus", "N/A")),
+            "balance": format_number(wallet_data.get("balance", "N/A")),
+            "tier": wallet_data.get("tier", wallet_data.get("tierIndex", "N/A")),  # tier veya tierIndex
+        }
+    except Exception as e:
+        print(f"Error fetching wallet data: {e}")
+        return {"error": "Unable to fetch wallet data. Please try again."}

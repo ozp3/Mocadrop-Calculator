@@ -1,5 +1,10 @@
 ﻿# Mocadrop-Calculator
 
+v2.2.0 IS HERE
+
+- Wallet profile
+- Ens + Evm support
+
 v2.1.1 IS HERE
 
 - Bug fixes and improvements

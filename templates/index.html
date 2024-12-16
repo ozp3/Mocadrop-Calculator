@@ -25,7 +25,28 @@
     {% endif %}
 
     <form method="post" action="{{ url_for('index') }}">
-      <label for="project">Select Project:</label>
+      <div style="margin-top: 20px;">
+        <label for="evm_address" style="font-weight: bold;">Enter EVM Address:</label>
+        <input type="text" id="evm_address" name="evm_address" placeholder="0x......">
+        <button type="submit" name="fetch_wallet_data">Get Profile</button>
+      </div>
+
+      {% if wallet_data and wallet_data.error is not defined %}
+      <div class="tier-info">
+        <h3 style="color:rgb(255, 255, 255); text-align: center;">Wallet Information</h3>
+        <p><strong>EVM Address:</strong><span style="color: #ff79c6;"> {{ request.form.get('evm_address', '') }}</span></p>
+        <p><strong>Tier:</strong> <span style="color: #ff79c6;">{{ wallet_data.tier }}</span></p>
+        <p><strong>SP Balance:</strong> <span style="color: #ff79c6;">{{ wallet_data.balance }}</span></p>
+        <p><strong>Base SP Rate Per Day:</strong> <span style="color: #ff79c6;">{{ wallet_data.baseRatePerDay }}</span></p>
+        <p><strong>Boost SP Rate Per Day:</strong> <span style="color: #ff79c6;">{{ wallet_data.boostRatePerDay }}</span></p>
+        <p><strong>Total Boost Percent:</strong> <span style="color: #ff79c6;">{{ wallet_data.totalBoostPercent }}%</span></p>
+        <p><strong>Total SP Generated:</strong> <span style="color: #ff79c6;">{{ wallet_data.totalGenerated }}</span></p>
+      </div>
+      {% elif wallet_data.error %}
+      <p style="color: red; text-align: center;">{{ wallet_data.error }}</p>
+      {% endif %}
+
+      <label for="project"><br>Select Project:</label>
       <select id="project" name="project" onchange="this.form.submit()">
         {% for project in projects %}
         <option value="{{ project.name }}" {% if project.name == token_name %}selected{% endif %}>
