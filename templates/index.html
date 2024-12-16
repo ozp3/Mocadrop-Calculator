@@ -13,6 +13,31 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='styles/style.css') }}">
   </head>
   <body>
+
+    <style>
+      @keyframes pulse {
+          0%, 100% {
+              transform: scale(1);
+              color: #e91e63;
+              text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.5);
+          }
+          50% {
+              transform: scale(1.1);
+              color: #ff9800;
+              text-shadow: 4px 4px 16px rgba(0, 0, 0, 0.7);
+          }
+      }
+      .pulse-animation {
+          font-size: 60px;
+          font-weight: 900;
+          text-align: center;
+          margin: 20px 0;
+          animation: pulse 2s infinite;
+      }
+      </style>
+      <h1 class="pulse-animation">OFFICIAL MOCA DAY "16.12"</h1>
+      
+  
     <h1>Moca Drop Reward Calculator</h1>
 
     <p style="text-align: center; color: #e994b8; font-weight: bold">
@@ -26,15 +51,15 @@
 
     <form method="post" action="{{ url_for('index') }}">
       <div style="margin-top: 20px;">
-        <label for="evm_address" style="font-weight: bold;">Enter EVM Address:</label>
-        <input type="text" id="evm_address" name="evm_address" placeholder="0x......">
+        <label for="evm_address" style="font-weight: bold;">Enter ENS or EVM Address:</label>
+        <input type="text" id="evm_address" name="evm_address" placeholder="moca.eth or 0x......">
         <button type="submit" name="fetch_wallet_data">Get Profile</button>
       </div>
 
       {% if wallet_data and wallet_data.error is not defined %}
       <div class="tier-info">
         <h3 style="color:rgb(255, 255, 255); text-align: center;">Wallet Information</h3>
-        <p><strong>EVM Address:</strong><span style="color: #ff79c6;"> {{ request.form.get('evm_address', '') }}</span></p>
+        <p><strong>ENS or EVM Address:</strong><span style="color: #ff79c6;"> {{ request.form.get('evm_address', '') }}</span></p>
         <p><strong>Tier:</strong> <span style="color: #ff79c6;">{{ wallet_data.tier }}</span></p>
         <p><strong>SP Balance:</strong> <span style="color: #ff79c6;">{{ wallet_data.balance }}</span></p>
         <p><strong>Base SP Rate Per Day:</strong> <span style="color: #ff79c6;">{{ wallet_data.baseRatePerDay }}</span></p>
