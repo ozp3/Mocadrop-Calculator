@@ -1,6 +1,6 @@
 ﻿# Mocadrop-Calculator
 
-*Live version is now have private duplicate for security reasons. ENS/EVM resolver needs RPC that uses api key. Except that, whole tool can be accessable for public excluding newer versions of "services/ens_utils.py" v2.2.0.*
+*Live version is now have private duplicate for security reasons. Some methods uses api keys. Except that, v2.2.0 can be accessable for public excluding newer versions.*
 
 v2.2.0 IS HERE
 
