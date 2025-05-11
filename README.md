@@ -1,6 +1,13 @@
 ﻿# Mocadrop-Calculator
 
-*Live version is now have private duplicate for security reasons. Some methods uses api keys. Except that, v2.2.0 can be accessable for public excluding newer versions.*
+*Live version is now have private duplicate for security reasons. Some methods uses api keys. Except that, v2.2.0 and older versions can be accessable for public excluding newer versions.*
+
+v2.3 IS HERE
+
+- New style, visual
+- New feature "Market Summary". Some parities related MOCA
+- New navbar
+- A separate page for each tool to smooth the experience
 
 v2.2.0 IS HERE
 
